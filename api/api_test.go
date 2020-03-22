@@ -1,18 +1,15 @@
 package api_test
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/bxcodec/faker"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	queuewrapper "git.krk.awesome-ind.com/GoUtils/QueueWrapper"
 
 	"deviceproxy/api"
 	"deviceproxy/mocks_test"
-	"deviceproxy/model"
 )
 
 type ServerTestSuite struct {
@@ -35,22 +32,7 @@ type ServerTestSuite struct {
 
 	eventMsgJSON string
 
-	actionMsg     model.ActionMsg
-	actionMsgJSON string
-
-	emptyActionMsg     model.ActionMsg
-	emptyActionMsgJSON string
-
-	openSessionActionMsgJSON  string
-	openSessionActionMsgJSON2 string
-	openSessionActionMsgJSON3 string
-
-	closeSessionActionMsg      model.BasicActionMsg
-	closeSessionActionMsgJSON  string
-	closeSessionActionMsg2     model.BasicActionMsg
-	closeSessionActionMsgJSON2 string
-	closeSessionActionMsg3     model.BasicActionMsg
-	closeSessionActionMsgJSON3 string
+	msg string
 }
 
 func TestExecuteServerTestSuite(t *testing.T) {
@@ -76,19 +58,7 @@ func (suite *ServerTestSuite) SetupTest() {
 
 	suite.eventMsgJSON = "{}"
 
-	faker.FakeData(&suite.actionMsg)
-	actionMsgJSON, err := json.Marshal(&suite.actionMsg)
-	suite.Nil(err)
-
-	suite.actionMsgJSON = string(actionMsgJSON)
-
-	faker.FakeData(&suite.emptyActionMsg)
-	suite.emptyActionMsg.Action = ""
-
-	emptyActionMsgJSON, err := json.Marshal(&suite.emptyActionMsg)
-	suite.Nil(err)
-
-	suite.emptyActionMsgJSON = string(emptyActionMsgJSON)
+	faker.FakeData(&suite.msg)
 }
 
 func (suite *ServerTestSuite) AfterTest(suiteName, testName string) {
@@ -109,7 +79,7 @@ func (suite *ServerTestSuite) Test_APIIsUnsubcribedFromTopicAfterClientIsDisconn
 
 	suite.api.OnClientDisconnected(suite.connectionID0, &suite.deviceTag0)
 
-	err := suite.api.OnMessageReceivedFromClient(suite.connectionID0, &suite.actionMsgJSON, &suite.publishQueueTopic0)
+	err := suite.api.OnMessageReceivedFromClient(suite.connectionID0, &suite.msg, &suite.publishQueueTopic0)
 	suite.NotNil(err)
 
 	queuewrapper.SendQueueMsgToService(suite.msgQueueMock, suite.eventQueueTopic0, suite.eventMsgJSON)
@@ -133,21 +103,21 @@ func (suite *ServerTestSuite) Test_TopicIsNotUnsubscribedIfThereIsStillClientCon
 	err = suite.api.OnConnectionEstabilishedFromClient(suite.connectionID0, &suite.deviceTag0)
 	suite.Nil(err)
 
-	suite.msgQueueMock.On("PublishMessage", suite.publishQueueTopic0, suite.actionMsgJSON).Return(nil)
-	err = suite.api.OnMessageReceivedFromClient(suite.connectionID0, &suite.actionMsgJSON, &suite.deviceTag0)
+	suite.msgQueueMock.On("PublishMessage", suite.publishQueueTopic0, suite.msg).Return(nil)
+	err = suite.api.OnMessageReceivedFromClient(suite.connectionID0, &suite.msg, &suite.deviceTag0)
 	suite.Nil(err)
 
 	err = suite.api.OnClientDisconnected(suite.connectionID0, &suite.deviceTag0)
 	suite.Nil(err)
 
-	suite.msgQueueMock.On("PublishMessage", suite.publishQueueTopic0, suite.actionMsgJSON).Return(nil)
-	err = suite.api.OnMessageReceivedFromClient(suite.connectionID0, &suite.actionMsgJSON, &suite.deviceTag0)
+	suite.msgQueueMock.On("PublishMessage", suite.publishQueueTopic0, suite.msg).Return(nil)
+	err = suite.api.OnMessageReceivedFromClient(suite.connectionID0, &suite.msg, &suite.deviceTag0)
 	suite.Nil(err)
 
 	err = suite.api.OnClientDisconnected(suite.connectionID0, &suite.deviceTag0)
 	suite.Nil(err)
 
-	err = suite.api.OnMessageReceivedFromClient(suite.connectionID0, &suite.actionMsgJSON, &suite.deviceTag0)
+	err = suite.api.OnMessageReceivedFromClient(suite.connectionID0, &suite.msg, &suite.deviceTag0)
 	suite.NotNil(err)
 }
 
@@ -155,70 +125,7 @@ func (suite *ServerTestSuite) Test_APIPublishMessageToQueueIfMessageComesFromCli
 	err := suite.api.OnConnectionEstabilishedFromClient(suite.connectionID0, &suite.deviceTag0)
 	suite.Nil(err)
 
-	suite.msgQueueMock.On("PublishMessage", suite.publishQueueTopic0, suite.actionMsgJSON).Return(nil)
-	err = suite.api.OnMessageReceivedFromClient(suite.connectionID0, &suite.actionMsgJSON, &suite.deviceTag0)
+	suite.msgQueueMock.On("PublishMessage", suite.publishQueueTopic0, suite.msg).Return(nil)
+	err = suite.api.OnMessageReceivedFromClient(suite.connectionID0, &suite.msg, &suite.deviceTag0)
 	suite.Nil(err)
-}
-
-func (suite *ServerTestSuite) Test_APIReturnsErrorIfAPISendsMessageWithEmptyAction() {
-	err := suite.api.OnConnectionEstabilishedFromClient(suite.connectionID0, &suite.deviceTag0)
-	suite.Nil(err)
-
-	err = suite.api.OnMessageReceivedFromClient(suite.connectionID0, &suite.emptyActionMsgJSON, &suite.deviceTag0)
-	suite.NotNil(err)
-}
-
-func (suite *ServerTestSuite) Test_APISendsCloseMessagesForStillOpenedSessionAfterConnectionDrops() {
-	err := suite.api.OnConnectionEstabilishedFromClient(suite.connectionID0, &suite.deviceTag0)
-	suite.Nil(err)
-
-	suite.msgQueueMock.On("PublishMessage", suite.publishQueueTopic0, suite.openSessionActionMsgJSON).Return(nil)
-	suite.msgQueueMock.On("PublishMessage", suite.publishQueueTopic0, suite.openSessionActionMsgJSON2).Return(nil)
-
-	err = suite.api.OnMessageReceivedFromClient(suite.connectionID0, &suite.openSessionActionMsgJSON, &suite.deviceTag0)
-	suite.Nil(err)
-	err = suite.api.OnMessageReceivedFromClient(suite.connectionID0, &suite.openSessionActionMsgJSON2, &suite.deviceTag0)
-	suite.Nil(err)
-
-	suite.msgQueueMock.On("PublishMessage", suite.publishQueueTopic0, suite.closeSessionActionMsgJSON).Return(nil)
-
-	err = suite.api.OnMessageReceivedFromClient(suite.connectionID0, &suite.closeSessionActionMsgJSON, &suite.deviceTag0)
-	suite.Nil(err)
-
-	suite.msgQueueMock.On("PublishMessage", suite.publishQueueTopic0, suite.getActionsComparator(suite.closeSessionActionMsg2)).Return(nil)
-
-	err = suite.api.OnClientDisconnected(suite.connectionID0, &suite.deviceTag0)
-	suite.Nil(err)
-}
-
-func (suite *ServerTestSuite) Test_APISendsCloseMessagesForStillOpenedSessionAfterConnectionDropsAndWhichAnyOfThemWasNotClosedManually() {
-	err := suite.api.OnConnectionEstabilishedFromClient(suite.connectionID0, &suite.deviceTag0)
-	suite.Nil(err)
-
-	suite.msgQueueMock.On("PublishMessage", suite.publishQueueTopic0, suite.openSessionActionMsgJSON).Return(nil)
-	suite.msgQueueMock.On("PublishMessage", suite.publishQueueTopic0, suite.openSessionActionMsgJSON2).Return(nil)
-	suite.msgQueueMock.On("PublishMessage", suite.publishQueueTopic0, suite.openSessionActionMsgJSON3).Return(nil)
-
-	err = suite.api.OnMessageReceivedFromClient(suite.connectionID0, &suite.openSessionActionMsgJSON, &suite.deviceTag0)
-	suite.Nil(err)
-	err = suite.api.OnMessageReceivedFromClient(suite.connectionID0, &suite.openSessionActionMsgJSON2, &suite.deviceTag0)
-	suite.Nil(err)
-	err = suite.api.OnMessageReceivedFromClient(suite.connectionID0, &suite.openSessionActionMsgJSON3, &suite.deviceTag0)
-	suite.Nil(err)
-
-	suite.msgQueueMock.On("PublishMessage", suite.publishQueueTopic0, suite.getActionsComparator(suite.closeSessionActionMsg)).Return(nil)
-	suite.msgQueueMock.On("PublishMessage", suite.publishQueueTopic0, suite.getActionsComparator(suite.closeSessionActionMsg2)).Return(nil)
-	suite.msgQueueMock.On("PublishMessage", suite.publishQueueTopic0, suite.getActionsComparator(suite.closeSessionActionMsg3)).Return(nil)
-
-	err = suite.api.OnClientDisconnected(suite.connectionID0, &suite.deviceTag0)
-	suite.Nil(err)
-}
-
-func (suite *ServerTestSuite) getActionsComparator(compareWith model.BasicActionMsg) interface{} {
-	return mock.MatchedBy(func(res interface{}) bool {
-		baseActionMessage := &model.BasicActionMsg{}
-		err := json.Unmarshal([]byte(res.(string)), baseActionMessage)
-		suite.Nil(err)
-		return baseActionMessage.Action == compareWith.Action && baseActionMessage.ID == compareWith.ID
-	})
 }

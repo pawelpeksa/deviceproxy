@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -9,7 +8,6 @@ import (
 
 	queuewrapper "git.krk.awesome-ind.com/GoUtils/QueueWrapper"
 
-	"deviceproxy/model"
 	"deviceproxy/resources"
 )
 
@@ -21,7 +19,6 @@ const (
 // API ...
 type API struct {
 	msgSender          MessageSender
-	validator          model.Validator
 	sessionsPerClients map[string][]string
 	clientsPerTopics   map[string]int
 	msgQueue           queuewrapper.IMsgQueue
@@ -73,13 +70,6 @@ func (api *API) OnMessageReceivedFromClient(connectionID string, msg *string, de
 	api.messageMutex.Lock()
 	defer api.messageMutex.Unlock()
 
-	err := api.validator.ValidateActionMsg(msg)
-
-	if err != nil {
-		log.Printf(logPrefix+"OnMessageReceivedFromClient: Error validating client message: %v\n", err)
-		return err
-	}
-
 	publishQueueTopic := getPublishQueueTopic(deviceTag)
 	eventQueueTopic := getEventQueueTopic(deviceTag)
 
@@ -87,16 +77,8 @@ func (api *API) OnMessageReceivedFromClient(connectionID string, msg *string, de
 		return fmt.Errorf(logPrefix + "OnMessageReceivedFromClient: Trying to send message to queue to the topic of the device but service is not registered to listen to it")
 	}
 
-	actionMsg := &model.BasicActionMsg{}
-
-	err = json.Unmarshal([]byte(*msg), actionMsg)
-
-	if err != nil {
-		return fmt.Errorf(logPrefix+"OnMessageReceivedFromClient: Could not parse action message: %v", err)
-	}
-
 	logDebug(fmt.Sprintf("Publishing message %v to queue topic: %v \n", publishQueueTopic, *msg))
-	err = api.msgQueue.PublishMessage(publishQueueTopic, *msg)
+	err := api.msgQueue.PublishMessage(publishQueueTopic, *msg)
 
 	if err != nil {
 		return fmt.Errorf(logPrefix+"OnMessageReceivedFromClient: Error publishing client message to queue: %v\n", err)
