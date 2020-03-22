@@ -1,18 +1,18 @@
 package api_test
 
 import (
-	queuewrapper "git.krk.awesome-ind.com/GoUtils/QueueWrapper"
+	"encoding/json"
+	"testing"
 
 	"github.com/bxcodec/faker"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	"github.azc.ext.hp.com/fitstation-isaac/appinapp_service/internal/deviceproxy/api"
-	"github.azc.ext.hp.com/fitstation-isaac/appinapp_service/internal/deviceproxy/mocks_test"
-	"github.azc.ext.hp.com/fitstation-isaac/appinapp_service/internal/deviceproxy/model"
+	queuewrapper "git.krk.awesome-ind.com/GoUtils/QueueWrapper"
 
-	"encoding/json"
-	"testing"
+	"deviceproxy/api"
+	"deviceproxy/mocks_test"
+	"deviceproxy/model"
 )
 
 type ServerTestSuite struct {
@@ -89,52 +89,6 @@ func (suite *ServerTestSuite) SetupTest() {
 	suite.Nil(err)
 
 	suite.emptyActionMsgJSON = string(emptyActionMsgJSON)
-
-	// open 1
-	bytes, err := json.Marshal(model.BasicActionMsg{
-		Action:    api.ActionRSScanOpenSession,
-		Timestamp: 0,
-		ID:        "grzesio",
-	})
-	suite.openSessionActionMsgJSON = string(bytes)
-	// open 2
-	bytes, err = json.Marshal(model.BasicActionMsg{
-		Action:    api.ActionRSScanOpenSession,
-		Timestamp: 0,
-		ID:        "krzesio",
-	})
-	suite.openSessionActionMsgJSON2 = string(bytes)
-	// open 3
-	bytes, err = json.Marshal(model.BasicActionMsg{
-		Action:    api.ActionRSScanOpenSession,
-		Timestamp: 0,
-		ID:        "lesio",
-	})
-	suite.openSessionActionMsgJSON3 = string(bytes)
-	// close 1
-	suite.closeSessionActionMsg = model.BasicActionMsg{
-		Action:    api.ActionRSScanCloseSession,
-		Timestamp: 0,
-		ID:        "grzesio",
-	}
-	bytes, err = json.Marshal(suite.closeSessionActionMsg)
-	suite.closeSessionActionMsgJSON = string(bytes)
-	// close 2
-	suite.closeSessionActionMsg2 = model.BasicActionMsg{
-		Action:    api.ActionRSScanCloseSession,
-		Timestamp: 0,
-		ID:        "krzesio",
-	}
-	bytes, err = json.Marshal(suite.closeSessionActionMsg2)
-	suite.closeSessionActionMsgJSON2 = string(bytes)
-	// close 3
-	suite.closeSessionActionMsg3 = model.BasicActionMsg{
-		Action:    api.ActionRSScanCloseSession,
-		Timestamp: 0,
-		ID:        "lesio",
-	}
-	bytes, err = json.Marshal(suite.closeSessionActionMsg3)
-	suite.closeSessionActionMsgJSON3 = string(bytes)
 }
 
 func (suite *ServerTestSuite) AfterTest(suiteName, testName string) {

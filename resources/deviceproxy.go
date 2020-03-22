@@ -14,18 +14,18 @@ const (
 	ServiceName = "DeviceProxy"
 
 	EnvDeviceProxyEndpoint = "DeviceProxyEndpoint"
-	EnvServicePort          = "DeviceProxyServicePort"
+	EnvServicePort         = "DeviceProxyServicePort"
 	EnvDeviceProxyLogDebug = "DeviceProxyLogDebug"
 
-	NATSEnvURLName     = "nats_URL_appinappservice"
-	NATSEnvClusterName = "nats_cluster_appinappservice"
-	NATSEnvUserName    = "nats_username_appinappservice"
-	NATSEnvPassName    = "nats_password_appinappservice"
+	NATSEnvURLName     = "nats_URL_deviceproxy"
+	NATSEnvClusterName = "nats_cluster_deviceproxy"
+	NATSEnvUserName    = "nats_username_deviceproxy"
+	NATSEnvPassName    = "nats_password_deviceproxy"
 )
 
 var (
 	// DeviceProxyEndpoint ...
-	DeviceProxyEndpoint = "/appinapp/v1/deviceproxy"
+	DeviceProxyEndpoint = "/deviceproxy"
 	// ServicePort ...
 	ServicePort = "3001"
 	// NATSURL says where to connects for NATS queueing
