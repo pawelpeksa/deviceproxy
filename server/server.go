@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/websocket"
 	uuid "github.com/satori/go.uuid"
 
+	"deviceproxy/model"
 	"deviceproxy/resources"
 )
 
@@ -172,9 +173,13 @@ func (s *Server) sendResponseMsgToClient(connection *websocket.Conn, deviceTag s
 }
 
 func (s *Server) sendResponseMsgToConnection(connection *websocket.Conn, code int, msg string) {
-	resMsg := fmt.Sprintf("Msg:%v Status:%v", msg, code)
 
-	sendErr := connection.WriteJSON(resMsg)
+	jsonResponse := model.ResponseMsg{
+		Code:    code,
+		Message: msg,
+	}
+
+	sendErr := connection.WriteJSON(jsonResponse)
 
 	if sendErr != nil {
 		log.Printf(logPrefix+"Can not send error to client err:%v", sendErr)
